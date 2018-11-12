@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      0.1
+// @version      0.2
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -236,9 +236,9 @@
             } else {
                 let name = v.children[0].innerText.toUpperCase();
                 let quarterGradeText = v.children[1];
-                let quarterGrade = Number(quarterGradeText.innerText.match(/(\d+\.\d+)/)[1]);
+                let quarterGrade = Number((quarterGradeText.innerText.match(/(\d+\.\d+)/) || [0, NaN])[1]);
                 let gradeText = v.children[2];
-                let grade = Number(gradeText.innerText.match(/(\d+\.\d+)/)[1]);
+                let grade = Number((gradeText.innerText.match(/(\d+\.\d+)/) || [0, NaN])[1]);
                 let change = 0;
                 let changeYTD = 0;
                 let add = 0;
@@ -291,7 +291,7 @@
                 if (change > 0) changeSpan.style.color = "green";
                 else if (change < 0) changeSpan.style.color = "red";
                 else changeSpan.style.color = "gray";
-                quarterGradeText.insertBefore(changeSpan, quarterGradeText.lastElementChild);
+                //quarterGradeText.insertBefore(changeSpan, quarterGradeText.lastElementChild);
 
                 let changeYTDSpan = document.createElement("span");
                 changeYTDSpan.innerText = ` (${changeYTD >= 0 ? "+" : ""}${changeYTD.toFixed(2)})`;
@@ -302,7 +302,7 @@
 
                 ggpa += gpa;
                 gugpa += ugpa;
-                count++;
+                if (!isNaN(grade)) count++;
                 e.innerText = `${gpa.toFixed(1)} (${ugpa.toFixed(1)})`;
             }
             v.insertBefore(e, v.children[3]);
