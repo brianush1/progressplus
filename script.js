@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      0.2
+// @version      0.3
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -59,11 +59,13 @@
                 let rows = e.getElementsByTagName("tr");
                 for (let i = 0; i < rows.length; ++i) {
                     let row = rows[i].children[3].innerText;
+                    let weight = rows[i].children[2].innerText;
                     if (row.includes("Mark")) continue;
                     if (row.startsWith("/")) continue;
+                    weight = parseInt(weight) || 0;
                     let grade = parseInt(row) || 0;
                     let outof = parseInt(row.split("/")[1]);
-                    cat.data.push([1, grade, outof]);
+                    cat.data.push([weight, grade, outof]);
                 }
 
                 let btn = document.createElement("button");
