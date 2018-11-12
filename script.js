@@ -1,7 +1,9 @@
 // ==UserScript==
 // @name         ProgressPlus
-// @namespace    http://127.0.0.1/
+// @namespace    https://github.com/brianush1/progressplus
 // @version      0.1
+// @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
+// @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
 // @author       a cool frood
 // @match        http*://parentaccess.ocps.net/*
