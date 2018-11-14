@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      0.5
+// @version      0.6
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -299,7 +299,7 @@
                 if (change > 0) changeSpan.style.color = "green";
                 else if (change < 0) changeSpan.style.color = "red";
                 else changeSpan.style.color = "gray";
-                //quarterGradeText.insertBefore(changeSpan, quarterGradeText.lastElementChild);
+                quarterGradeText.insertBefore(changeSpan, quarterGradeText.lastElementChild);
 
                 let changeYTDSpan = document.createElement("span");
                 changeYTDSpan.innerText = ` (${changeYTD >= 0 ? "+" : ""}${changeYTD.toFixed(2)})`;
