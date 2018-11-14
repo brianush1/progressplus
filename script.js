@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      0.3
+// @version      0.4
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -222,13 +222,15 @@
     }
 
     function summary() {
-        let gradeHistory = JSON.parse(localStorage.gradeHistory || "{}");
+        let quarter = Number(document.getElementsByName("DropDownListGradingPeriod")[0].querySelector("[selected=\"selected\"]").value) - 1;
+        let gradeHistory = JSON.parse(localStorage.gradeHistory || "[{}, {}, {}, {}]");
         let datagrid = document.getElementsByClassName("DataGrid")[0];
         let tbody = datagrid.parentNode.parentNode.parentNode;
         let grid = datagrid.getElementsByTagName("tbody")[0];
         let ggpa = 0;
         let gugpa = 0;
         let count = 0;
+        let quarterHistory = gradeHistory[quarter];
         for (let i = 0; i < grid.children.length; ++i) {
             let v = grid.children[i];
             let e = document.createElement("td");
@@ -257,8 +259,8 @@
                 else if (grade >= 59.5) { gpa = 1; ugpa = 1; }
                 else { gpa = 0; ugpa = 0; }
 
-                if (name in gradeHistory) {
-                    let history = gradeHistory[name];
+                if (name in quarterHistory) {
+                    let history = quarterHistory[name];
                     let last = -Infinity;
                     let lastIndex = -1;
                     for (let i = 0; i < history.length; ++i) {
@@ -274,10 +276,11 @@
                         changeYTD = history[lastIndex].yearToDate - history[lastIndex - 1].yearToDate;
                     }
                 } else {
-                    gradeHistory[name] = [];
+                    quarterHistory[name] = [];
                 }
 
-                gradeHistory[name].push({
+                quarterHistory[name].push({
+                    quarter: quarter,
                     grade: quarterGrade,
                     yearToDate: grade,
                     gpa: gpa,
