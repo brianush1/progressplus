@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      0.4
+// @version      0.5
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -224,6 +224,9 @@
     function summary() {
         let quarter = Number(document.getElementsByName("DropDownListGradingPeriod")[0].querySelector("[selected=\"selected\"]").value) - 1;
         let gradeHistory = JSON.parse(localStorage.gradeHistory || "[{}, {}, {}, {}]");
+        if (!(gradeHistory instanceof Array)) {
+            gradeHistory = [{}, {}, {}, {}];
+        }
         let datagrid = document.getElementsByClassName("DataGrid")[0];
         let tbody = datagrid.parentNode.parentNode.parentNode;
         let grid = datagrid.getElementsByTagName("tbody")[0];
@@ -238,7 +241,7 @@
             if (i == 0) {
                 e.innerText = "GPA";
             } else {
-                let name = v.children[0].innerText.toUpperCase();
+                let name = v.children[0].innerText.toUpperCase().trim();
                 let quarterGradeText = v.children[1];
                 let quarterGrade = Number((quarterGradeText.innerText.match(/(\d+\.\d+)/) || [0, NaN])[1]);
                 let gradeText = v.children[2];
