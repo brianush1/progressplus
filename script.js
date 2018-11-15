@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      0.6
+// @version      0.7
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -41,12 +41,24 @@
                 self.__doPostBack('LinkButtonView','');
             } else {
                 let s = v.getElementsByTagName("span");
+                console.log(s);
                 cat = {data: [], name: s[0].innerText, markElement: s[1]};
                 let weight = -1;
-                if (s[1].innerText.startsWith("Weight: ")) {
+                if (s[1] && s[1].innerText.startsWith("Weight: ")) {
                     cat.markElement = s[2];
                     weight = parseFloat(s[1].innerText.substring(8));
                 }
+
+                if (cat.markElement === undefined) {
+                    cat.markElement = document.createElement("td");
+                    cat.markElement.className = "HeaderText";
+                    cat.markElement.align = "right";
+                    cat.markElement.style.width = "30%";
+                    let me = cat.markElement;
+                    cat.markElement.appendChild(cat.markElement = document.createElement("span"));
+                    v.getElementsByTagName("tr")[0].appendChild(me);
+                }
+
                 cat.mark = parseFloat(cat.markElement.innerText.substring(6));
                 cat.weight = weight;
                 data.push(cat);
@@ -72,6 +84,7 @@
                 btn.innerText = "Add new assignment";
                 btn.style.width = "100%";
                 btn.style.height = "2rem";
+                console.log(c[i]);
                 ta.insertBefore(btn, c[i].nextSibling);
 
                 btns.push(btn);
