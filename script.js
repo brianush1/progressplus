@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      0.7
+// @version      0.8
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -70,14 +70,32 @@
 
                 let rows = e.getElementsByTagName("tr");
                 for (let i = 0; i < rows.length; ++i) {
+                    let r = rows[i];
                     let row = rows[i].children[3].innerText;
                     let weight = rows[i].children[2].innerText;
+
+                    let ign = document.createElement("td");
+                    ign.align = "center";
+                    ign.width = "10%";
+                    ign.innerText = row.includes("Mark") ? "Ignore?" : "";
+
+                    r.insertBefore(ign, r.children[2]);
+
                     if (row.includes("Mark")) continue;
-                    if (row.startsWith("/")) continue;
+
+                    let checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+
+                    ign.appendChild(checkbox);
+
+                    checkbox.addEventListener("change", () => update());
+
+                    if (row.startsWith("/")) continue
+
                     weight = parseInt(weight) || 0;
                     let grade = parseInt(row) || 0;
                     let outof = parseInt(row.split("/")[1]);
-                    cat.data.push([weight, grade, outof]);
+                    cat.data.push([weight, grade, outof, checkbox]);
                 }
 
                 let btn = document.createElement("button");
@@ -137,6 +155,22 @@
 
             let date = newColumn(c, false, "N/A");
             let name = newColumn(c, true, "New Assignment", true);
+
+            let ign = document.createElement("td");
+            ign.align = "center";
+            ign.width = "10%";
+
+            c.appendChild(ign);
+
+            let checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+
+            ign.appendChild(checkbox);
+
+            a.push(checkbox);
+
+            checkbox.addEventListener("change", () => update());
+
             let weight = newColumn(c, true, "1");
             let [mark, grade, max, q] = newColumn(c, true, 1);
             let late = newColumn(c, false, "N/A");
@@ -205,6 +239,7 @@
                 let catc = 0;
                 for (let j = 0; j < cat.data.length; ++j) {
                     let a = cat.data[j];
+                    if (a[3].checked) continue;
                     catavg += a[0] * a[1];
                     catc += a[0] * a[2];
                     if (cat.weight == -1) {
