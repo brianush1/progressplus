@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      0.8
+// @version      1.0
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
-// @author       a cool frood
+// @author       brianush1
 // @match        http*://parentaccess.ocps.net/*
 // @grant        none
+// @require      https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js
 // ==/UserScript==
 
 (function() {
@@ -269,19 +270,49 @@
         }
     }
 
-    function summary() {
-        let quarter = Number(document.getElementsByName("DropDownListGradingPeriod")[0].querySelector("[selected=\"selected\"]").value) - 1;
-        let gradeHistory = JSON.parse(localStorage.gradeHistory || "[{}, {}, {}, {}]");
-        if (!(gradeHistory instanceof Array)) {
-            gradeHistory = [{}, {}, {}, {}];
+    let username = (localStorage.loginAs || "global");
+
+    let rgradeHistory = JSON.parse(localStorage.gradeHistory || "[]");
+
+    function newRgradeHistory() {
+        rgradeHistory = {version: 1, users: {[username]: [{}, {}, {}, {}]}};
+    }
+
+    if (rgradeHistory instanceof Array && rgradeHistory.length === 0) {
+        newRgradeHistory();
+    }
+
+    let gradeHistory;
+
+    function updateHistory() {
+        if (rgradeHistory.version === undefined) {
+            rgradeHistory = {
+                version: 1,
+                users: {
+                    [username]: rgradeHistory
+                }
+            };
         }
+
+        gradeHistory = rgradeHistory.users[username] || (rgradeHistory.users[username] = [{}, {}, {}, {}]);
+        localStorage.gradeHistory = JSON.stringify(rgradeHistory);
+    }
+
+    updateHistory();
+
+    function summary() {
+
+        let quarter = document.getElementsByName("DropDownListGradingPeriod")[0];
+
+        if (quarter) quarter = Number(quarter.querySelector("[selected=\"selected\"]").value) - 1; else quarter = 1;
+        let quarterHistory = gradeHistory[quarter];
+
         let datagrid = document.getElementsByClassName("DataGrid")[0];
         let tbody = datagrid.parentNode.parentNode.parentNode;
         let grid = datagrid.getElementsByTagName("tbody")[0];
         let ggpa = 0;
         let gugpa = 0;
         let count = 0;
-        let quarterHistory = gradeHistory[quarter];
         for (let i = 0; i < grid.children.length; ++i) {
             let v = grid.children[i];
             let e = document.createElement("td");
@@ -383,6 +414,314 @@
         tbody.appendChild(gpaTr2);
     }
 
-    if (window.location.href.includes("ProgressDetails.aspx")) details();
-    else if (window.location.href.includes("ProgressSummary.aspx")) summary();
+    let tabs = document.getElementById("Banner1_TblItems");
+
+    if (tabs) tabs = tabs.getElementsByTagName("tr")[0];
+
+    let thisTab;
+
+    if (window.location.href.includes("ProgressDetails.aspx")) thisTab = "details";
+    if (window.location.href.includes("ProgressSummary.aspx")) thisTab = "summary";
+
+    let ttb = window.location.search.match(/^\?Tab=(.*)$/);
+
+    if (ttb) thisTab = ttb[1];
+
+    function del(e) {
+        e.parentElement.removeChild(e);
+    }
+
+    function createTab(name, id, sel, opt, fn) {
+        if (!(window.location.href.includes("Classroom/Schedule.aspx")
+           || window.location.href.includes("/Progress/"))) {
+            return;
+        }
+
+        let tabC = document.createElement("td");
+        let link = document.createElement("a");
+
+        link.className = (thisTab === id ? "Selected" : "") + "TabItemText";
+        link.innerText = name;
+        link.href = "https://parentaccess.ocps.net/Progress/ProgressSummary.aspx?Tab=" + id;
+
+        tabC.appendChild(link);
+
+        let separator = document.createElement("td");
+
+        separator.align = "center";
+        separator.style.width = "20px";
+
+        let span = document.createElement("span");
+
+        span.innerText = "|";
+        span.style.color = "white";
+
+        separator.appendChild(span);
+
+        tabs.insertBefore(tabC, tabs.children[0]);
+        tabs.insertBefore(separator, tabs.children[0]);
+
+        if (id === thisTab) {
+            document.title = "ProgressPlus - " + name;
+            let past = false;
+
+            const x = document.getElementsByName("Form1")[0];
+
+            document.querySelectorAll("a[title=\"Get Averages\"]")[0].className = "TabItemText";
+
+            const qrt = (document.querySelectorAll("#DropDownListGradingPeriod>option[selected=\"selected\"]")[0]).innerText;
+
+            let select, q;
+
+            for (let i = 0; i < x.children.length; ++i) {
+                let c = x.children[i];
+                if (c.id === "TablePageGrid") del(c);
+                if (c.className === "Tab") {
+                    const tr = c.children[0].children[0];
+                    del(tr.children[0]);
+
+                    const td = document.createElement("td");
+                    td.align = "center";
+
+                    tr.appendChild(td);
+
+                    if (sel !== undefined) {
+                        const span = document.createElement("span");
+                        span.className = "TabText";
+                        span.innerText = sel + ": \xa0";
+
+                        td.appendChild(span);
+                    }
+
+                    select = document.createElement("select");
+                    select.id = "DropDownListOptPeriod";
+
+                    q = document.createElement("select");
+                    q.id = "DropDownListGradingPeriod";
+
+                    if (opt !== undefined) {
+                        for (let j = 0; j < opt.length; ++j) {
+                            const o = opt[j];
+                            const oe = document.createElement("option");
+                            oe.innerText = o;
+                            select.appendChild(oe);
+                        }
+
+                        td.appendChild(select);
+                    }
+
+                    if (sel !== undefined) {
+                        for (let j = 0; j < 4; ++j) {
+                            const o = "Q" + (j + 1);
+                            const oe = document.createElement("option");
+                            if (o === qrt) {
+                                oe.selected = true;
+                            }
+                            oe.innerText = o;
+                            q.appendChild(oe);
+                        }
+
+                        td.appendChild(q);
+                    }
+                }
+            }
+
+            const ch = fn();
+
+            select.addEventListener("change", () => ch(select.selectedIndex, q.selectedIndex));
+            q.addEventListener("change", () => ch(select.selectedIndex, q.selectedIndex));
+
+            ch(0, parseInt(qrt.substring(1))-1);
+        }
+    }
+
+    createTab("Graph", "graph-view", "View", ["All"], function() {
+        let ctx = document.createElement("canvas");
+        ctx.width = "400";
+        ctx.height = "200";
+        ctx.width = "50%";
+
+        document.body.appendChild(ctx);
+
+        let chd = {
+            type: "scatter",
+            data: {datasets: []},
+            options: {
+				responsive: true,
+				title: {
+					display: true,
+					text: "ProgressPlus Graph View"
+				},
+				tooltips: {
+					mode: 'index',
+					intersect: false,
+				},
+				hover: {
+					mode: 'nearest',
+					intersect: true
+				},
+                animation: {
+                    duration: 0, // general animation time
+                },
+                hover: {
+                    animationDuration: 0, // duration of animations when hovering an item
+                },
+                responsiveAnimationDuration: 0, // animation duration after a resize
+				scales: {
+					xAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'Time'
+						}
+					}],
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'Grade'
+						}
+					}]
+				}
+            }
+        };
+
+        let chart = new Chart(ctx, chd);
+
+        return (u, q) => {
+            const history = gradeHistory[q];
+
+            /*const days =
+                  u === 0 ? 7 :
+            0;*/
+
+            const data = {datasets: []};
+
+            const colors = [
+                [255, 0, 0],
+                [255, 128, 0],
+                [0, 192, 0],
+                [255, 0, 128],
+                [0, 255, 255],
+                [0, 148, 255],
+                [192, 192, 0],
+                [64, 192, 192],
+                [255, 64, 192],
+            ];
+
+            let colori = 0;
+
+            for (const i in history) {
+                const v = history[i];
+
+                const clr = colors[colori++];
+                if (colori === colors.length) colori = 0;
+                const dataset = {label: i, borderColor: `rgb(${clr[0]},${clr[1]},${clr[2]})`, backgroundColor: `rgba(${clr[0]},${clr[1]},${clr[2]},0.2)`, fill: false, data: [], showLine: true};
+
+                console.log(v);
+
+                let L = 0;
+                for (const _ in v) {
+                    const x = v[_];
+
+                    dataset.data.push({x: x.date, y: x.grade});
+                }
+
+                data.datasets[data.datasets.length] = dataset;
+            }
+
+            chd.data = data;
+            console.log(data);
+
+            //console.log(history);
+            //console.log(days);
+
+            chart.update();
+        }
+    });
+
+    createTab("Data", "data-view", undefined, undefined, function() {
+
+        const t = document.createElement("table");
+        t.id = "TableMain";
+        t.cellspacing = "1";
+        t.cellpadding = "1";
+        t.width = "100%";
+        t.border = "0";
+
+        t.innerHTML = `<td align="center">
+<table class="ContentSection" id="TableDialog" cellspacing="1" cellpadding="2" width="45%" border="0" style="BORDER-RIGHT: black 1px solid; BORDER-TOP: black 1px solid; BORDER-LEFT: black 1px solid; BORDER-BOTTOM: black 1px solid">
+<tbody><tr>
+<td colspan="2">&nbsp;</td>
+</tr>
+<tr>
+<td align="center" colspan="2"><b>Warning:</b> Pressing "Clear Data" will delete ALL of your saved grade history
+</td>
+</tr>
+<tr>
+<td align="center" colspan="2"><br/>
+<input type="submit" value="Import" onclick="javascript:ProgressPlus_Import();">
+<input type="submit" value="Export" onclick="javascript:ProgressPlus_Export();">
+<input type="submit" value="Clear Data" onclick="javascript:ProgressPlus_ClearData();">
+</td>
+</tr>
+<tr>
+<td colspan="2">&nbsp;</td>
+</tr>
+</tbody></table>
+</td>`;
+        document.body.appendChild(t);
+
+        return (u, q) => {
+            const input = document.createElement("input");
+            input.setAttribute("type", "file");
+
+            input.addEventListener("change", function() {
+                const file = input.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        try {
+                            rgradeHistory = JSON.parse(reader.result);
+                            localStorage.gradeHistory = JSON.stringify(rgradeHistory);
+                        } catch (e) {
+                            console.log(e);
+                            alert("Invalid data file");
+                        }
+                    }
+                    reader.readAsText(file);
+                }
+            });
+
+            window.ProgressPlus_Import = function() {
+                input.click();
+            }
+
+            window.ProgressPlus_Export = function() {
+                const data = JSON.stringify(rgradeHistory);
+                const dataBlob = new Blob([data], {type: "application/json"});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement("a");
+                link.href = url;
+                const today = new Date();
+                link.download = "gradeData-" + today.getFullYear() + today.getMonth() + today.getDay() + ".json";
+                link.click();
+            }
+
+            window.ProgressPlus_ClearData = function() {
+                newRgradeHistory();
+                localStorage.gradeHistory = JSON.stringify(rgradeHistory);
+            }
+        };
+    });
+
+    if (thisTab === "details") details();
+    else if (thisTab === "summary") summary();
+
+    if (window.location.href.includes("LoginPage.aspx")) {
+        document.getElementById("ButtonLogin").addEventListener("click", (e) => {
+            const val = document.getElementById("TextBoxUserName").value;
+            localStorage.setItem("loginAs", val);
+        });
+    }
 })();
