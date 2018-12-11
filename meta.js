@@ -1,5 +1,5 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      0.8
+// @version      1.0
 // ==/UserScript==
