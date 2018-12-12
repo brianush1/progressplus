@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      1.1
+// @version      1.2
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -371,7 +371,7 @@
                     dateString: new Date().toString()
                 });
 
-                localStorage.gradeHistory = JSON.stringify(gradeHistory);
+                localStorage.gradeHistory = JSON.stringify(rgradeHistory);
 
                 let changeSpan = document.createElement("span");
                 changeSpan.innerText = ` (${change >= 0 ? "+" : ""}${change.toFixed(2)})`;
