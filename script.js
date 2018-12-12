@@ -535,7 +535,7 @@
         }
     }
 
-    createTab("Graph", "graph-view", "View", ["All"], function() {
+    createTab("Graph", "graph-view", "View", ["All", "Past week", "Past hour"], function() {
         let ctx = document.createElement("canvas");
         ctx.width = "400";
         ctx.height = "200";
@@ -543,8 +543,10 @@
 
         document.body.appendChild(ctx);
 
+        const clr = [255, 128, 0];
+        const time = {};
         let chd = {
-            type: "scatter",
+            type: "line",
             data: {datasets: []},
             options: {
 				responsive: true,
@@ -569,13 +571,16 @@
                 responsiveAnimationDuration: 0, // animation duration after a resize
 				scales: {
 					xAxes: [{
+                        type: "time",
 						display: true,
 						scaleLabel: {
 							display: true,
 							labelString: 'Time'
-						}
+						},
+                        time
 					}],
 					yAxes: [{
+                        type: "linear",
 						display: true,
 						scaleLabel: {
 							display: true,
@@ -589,13 +594,29 @@
         let chart = new Chart(ctx, chd);
 
         return (u, q) => {
+            //if (true) return;
             const history = gradeHistory[q];
+
+            let d;
+
+            if (u === 1) {
+                d = 3600 * 24 * 7 * 1000;
+            } else if (u === 2) {
+                d = 3600 * 1000;
+            }
+
+            console.log(u);
+
+            time.min = d === undefined ? undefined : new Date(new Date() - new Date(d));
+            time.max = d === undefined ? undefined : new Date();
 
             /*const days =
                   u === 0 ? 7 :
             0;*/
 
-            const data = {datasets: []};
+            const data = chd.data;
+
+            data.datasets = [];
 
             const colors = [
                 [255, 0, 0],
@@ -616,7 +637,7 @@
 
                 const clr = colors[colori++];
                 if (colori === colors.length) colori = 0;
-                const dataset = {label: i, borderColor: `rgb(${clr[0]},${clr[1]},${clr[2]})`, backgroundColor: `rgba(${clr[0]},${clr[1]},${clr[2]},0.2)`, fill: false, data: [], showLine: true};
+                const d = [];
 
                 console.log(v);
 
@@ -624,13 +645,12 @@
                 for (const _ in v) {
                     const x = v[_];
 
-                    dataset.data.push({x: x.date, y: x.grade});
+                    d.push({x: new Date(x.date), y: x.grade});
                 }
 
-                data.datasets[data.datasets.length] = dataset;
+                data.datasets.push({label: i, borderColor: `rgb(${clr[0]},${clr[1]},${clr[2]})`, backgroundColor: `rgba(${clr[0]},${clr[1]},${clr[2]},0.2)`, fill: false, data: d, showLine: true});
             }
 
-            chd.data = data;
             console.log(data);
 
             //console.log(history);
