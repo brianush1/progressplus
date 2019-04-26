@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      1.2
+// @version      1.3
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -275,7 +275,7 @@
     let rgradeHistory = JSON.parse(localStorage.gradeHistory || "[]");
 
     function newRgradeHistory() {
-        rgradeHistory = {version: 1, users: {[username]: [{}, {}, {}, {}]}};
+        rgradeHistory = {version: 2, users: {[username]: [{}, {}, {}, {}]}};
     }
 
     if (rgradeHistory instanceof Array && rgradeHistory.length === 0) {
@@ -292,6 +292,8 @@
                     [username]: rgradeHistory
                 }
             };
+        } else if (rgradeHistory.version === 1) {
+            rgradeHistory.version = 2;
         }
 
         gradeHistory = rgradeHistory.users[username] || (rgradeHistory.users[username] = [{}, {}, {}, {}]);
@@ -304,8 +306,13 @@
 
         let quarter = document.getElementsByName("DropDownListGradingPeriod")[0];
 
-        if (quarter) quarter = Number(quarter.querySelector("[selected=\"selected\"]").value) - 1; else quarter = 1;
+        if (quarter) quarter = Number(quarter.querySelector("[selected=\"selected\"]").value) - 1; else quarter = 0;
         let quarterHistory = gradeHistory[quarter];
+        if (gradeHistory[4] === undefined) {
+            gradeHistory[4] = [{}, {}];
+            localStorage.gradeHistory = JSON.stringify(rgradeHistory);
+        }
+        let semesterHistory = gradeHistory[4];
 
         let datagrid = document.getElementsByClassName("DataGrid")[0];
         let tbody = datagrid.parentNode.parentNode.parentNode;
@@ -391,6 +398,61 @@
                 gugpa += ugpa;
                 if (!isNaN(grade)) count++;
                 e.innerText = `${gpa.toFixed(1)} (${ugpa.toFixed(1)})`;
+            }
+            v.insertBefore(e, v.children[3]);
+        }
+        for (let i = 0; i < grid.children.length; ++i) {
+            let v = grid.children[i];
+            let e = document.createElement("td");
+            e.align = "center";
+            if (i == 0) {
+                e.innerText = "Semester Grade";
+            } else {
+                let name = v.children[0].innerText.toUpperCase().trim();
+                let q1 = 0;
+                let q2 = 1;
+                let sem = 0;
+                if (quarter === 2 || quarter === 3) {
+                    q1 = 2;
+                    q2 = 3;
+                    sem = 1;
+                }
+                let grade1 = (gradeHistory[q1] || {})[name];
+                let grade2 = (gradeHistory[q2] || {})[name];
+                if (grade1 !== undefined) grade1 = grade1[grade1.length - 1].grade;
+                if (grade2 !== undefined) grade2 = grade2[grade2.length - 1].grade;
+                let grade = 0;
+                let div = 0;
+                if (grade1 !== undefined) { grade += grade1; div++; }
+                if (grade2 !== undefined) { grade += grade2; div++; }
+                grade /= div;
+                if (!(name in semesterHistory[sem])) {
+                    semesterHistory[sem][name] = [];
+                }
+                semesterHistory[sem][name].push({
+                    grade: grade,
+                    date: Date.now(),
+                    dateString: new Date().toString()
+                });
+                localStorage.gradeHistory = JSON.stringify(rgradeHistory);
+                let delta = 0;
+                let localHistory = semesterHistory[sem];
+                if (localHistory.length > 1) {
+                    for (let i = 0; i < localHistory.length - 1; ++i) {
+                        let j = i + 1;
+                        let d = localHistory[j].grade - localHistory[i].grade;
+                        if (d !== 0) {
+                            delta = d;
+                        }
+                    }
+                }
+                let changeSpan = document.createElement("span");
+                changeSpan.innerText = ` (${delta >= 0 ? "+" : ""}${delta.toFixed(2)})`;
+                if (delta > 0) changeSpan.style.color = "green";
+                else if (delta < 0) changeSpan.style.color = "red";
+                else changeSpan.style.color = "gray";
+                e.innerText = formatGrade(grade);
+                e.insertBefore(changeSpan, e.lastElementChild);
             }
             v.insertBefore(e, v.children[3]);
         }
@@ -511,8 +573,7 @@
                     }
 
                     if (sel !== undefined) {
-                        for (let j = 0; j < 4; ++j) {
-                            const o = "Q" + (j + 1);
+                        for (const o of ["Q1", "Q2", "Semester 1", "Q3", "Q4", "Semester 2"]) {
                             const oe = document.createElement("option");
                             if (o === qrt) {
                                 oe.selected = true;
@@ -531,7 +592,9 @@
             select.addEventListener("change", () => ch(select.selectedIndex, q.selectedIndex));
             q.addEventListener("change", () => ch(select.selectedIndex, q.selectedIndex));
 
-            ch(0, parseInt(qrt.substring(1))-1);
+            const qq = parseInt(qrt.substring(1))-1;
+            if (qq < 2) ch(0, qq);
+            else ch(0, qq + 1);
         }
     }
 
@@ -544,7 +607,6 @@
         document.body.appendChild(ctx);
 
         const clr = [255, 128, 0];
-        const time = {};
         let chd = {
             type: "line",
             data: {datasets: []},
@@ -576,8 +638,7 @@
 						scaleLabel: {
 							display: true,
 							labelString: 'Time'
-						},
-                        time
+						}
 					}],
 					yAxes: [{
                         type: "linear",
@@ -594,8 +655,27 @@
         let chart = new Chart(ctx, chd);
 
         return (u, q) => {
-            //if (true) return;
-            const history = gradeHistory[q];
+            let history;
+            switch (q) {
+                case 0:
+                    history = gradeHistory[0];
+                    break;
+                case 1:
+                    history = gradeHistory[1];
+                    break;
+                case 2:
+                    history = gradeHistory[4][0];
+                    break;
+                case 3:
+                    history = gradeHistory[2];
+                    break;
+                case 4:
+                    history = gradeHistory[3];
+                    break;
+                case 5:
+                    history = gradeHistory[4][1];
+                    break;
+            }
 
             let d;
 
@@ -607,8 +687,11 @@
 
             console.log(u);
 
-            time.min = d === undefined ? undefined : new Date(new Date() - new Date(d));
-            time.max = d === undefined ? undefined : new Date();
+            chd.options.scales.xAxes[0].time = {
+                unit: "day",
+                min: d === undefined ? undefined : new Date(new Date() - new Date(d)),
+                //max: d === undefined ? undefined : new Date()
+            }
 
             /*const days =
                   u === 0 ? 7 :
@@ -657,6 +740,7 @@
             //console.log(days);
 
             chart.update();
+            chart.render();
         }
     });
 
