@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      1.3
+// @version      1.5
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -436,7 +436,7 @@
                 });
                 localStorage.gradeHistory = JSON.stringify(rgradeHistory);
                 let delta = 0;
-                let localHistory = semesterHistory[sem];
+                let localHistory = semesterHistory[sem][name];
                 if (localHistory.length > 1) {
                     for (let i = 0; i < localHistory.length - 1; ++i) {
                         let j = i + 1;
@@ -759,11 +759,13 @@
 <td colspan="2">&nbsp;</td>
 </tr>
 <tr>
-<td align="center" colspan="2"><b>Warning:</b> Pressing "Clear Data" will delete ALL of your saved grade history
+<td align="center" colspan="2"><b>Warning:</b> Pressing "Clear Data" will delete ALL of your saved grade history<br>
+Pressing "Import" will override your current data<br>Most times, you should use "Merge Import" instead
 </td>
 </tr>
 <tr>
 <td align="center" colspan="2"><br/>
+<input type="submit" value="Merge Import" onclick="javascript:ProgressPlus_Merge();">
 <input type="submit" value="Import" onclick="javascript:ProgressPlus_Import();">
 <input type="submit" value="Export" onclick="javascript:ProgressPlus_Export();">
 <input type="submit" value="Clear Data" onclick="javascript:ProgressPlus_ClearData();">
@@ -780,14 +782,66 @@
             const input = document.createElement("input");
             input.setAttribute("type", "file");
 
+            let merge;
             input.addEventListener("change", function() {
                 const file = input.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = function() {
                         try {
-                            rgradeHistory = JSON.parse(reader.result);
-                            localStorage.gradeHistory = JSON.stringify(rgradeHistory);
+                            if (merge) {
+                                const save = rgradeHistory;
+                                let other = JSON.parse(reader.result);
+                                if (rgradeHistory.version !== other.version || other.version !== 2) {
+                                    rgradeHistory = other;
+                                    updateHistory();
+                                    other = save;
+                                }
+                                other = other.users;
+                                const newUsers = {};
+                                const self = rgradeHistory.users;
+                                for (const user in self) {
+                                    if (!(user in other)) {
+                                        newUsers[user] = self[user];
+                                    }
+                                }
+                                for (const user in other) {
+                                    if (!(user in self)) {
+                                        newUsers[user] = other[user];
+                                    }
+                                }
+                                for (const user in self) {
+                                    if (user in other) {
+                                        const key1 = [0, 1, 2, 3, 4];
+                                        const key2 = [[], [], [], [], []];
+                                        for (const key of key1) {
+                                            for (const k in self[user][key]) {
+                                                key2[key].push(k);
+                                            }
+                                            for (const k in self[user][key]) {
+                                                if (key2[key].indexOf(k) < 0) {
+                                                    key2[key].push(k);
+                                                }
+                                            }
+                                        }
+                                        for (const A of key1) {
+                                            for (const B of key2[A]) {
+                                                const uarr = [];
+                                                for (const datum of self[user][A][B]) uarr.push(datum);
+                                                for (const datum of other[user][A][B]) uarr.push(datum);
+                                                uarr.sort((a, b) => {
+                                                    return a.date - b.date;
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                                rgradeHistory.users = newUsers;
+                            } else {
+                                rgradeHistory = JSON.parse(reader.result);
+                            }
+                            //localStorage.gradeHistory = JSON.stringify(rgradeHistory);
+                            updateHistory();
                         } catch (e) {
                             console.log(e);
                             alert("Invalid data file");
@@ -797,7 +851,13 @@
                 }
             });
 
+            window.ProgressPlus_Merge = function() {
+                merge = true;
+                input.click();
+            }
+
             window.ProgressPlus_Import = function() {
+                merge = false;
                 input.click();
             }
 
