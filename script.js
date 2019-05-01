@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      1.5
+// @version      1.6
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -303,7 +303,7 @@
     updateHistory();
 
     function summary() {
-
+        document.getElementById("DataGridSummary").style.width = "80%";
         let quarter = document.getElementsByName("DropDownListGradingPeriod")[0];
 
         if (quarter) quarter = Number(quarter.querySelector("[selected=\"selected\"]").value) - 1; else quarter = 0;
