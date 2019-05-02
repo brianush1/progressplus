@@ -1,10 +1,10 @@
 # ProgressPlus
-Tampermonkey script for more ProgressBook features
+Userscript for more ProgressBook features
 
 All rights reserved
 
 ## How to Install:
-NOTE: Tampermonkey no longer works, as it is now blocked. Please install Violentmonkey instead: https://chrome.google.com/webstore/detail/violentmonkey/jinjaccalgkegednnccohejagnlnfdag?hl=en
+NOTE: Tampermonkey no longer works on the school laptops, because it's now blocked. Please install Violentmonkey instead: https://chrome.google.com/webstore/detail/violentmonkey/jinjaccalgkegednnccohejagnlnfdag?hl=en
 
 1. Click the Violentmonkey icon to bring up this menu and click the plus (`+`) icon.
 ![Step 1](https://raw.githubusercontent.com/brianush1/progressplus/master/images/violentmonkey.png)
