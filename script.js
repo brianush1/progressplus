@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      1.6
+// @version      1.7
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -232,6 +232,7 @@
         update = () => {
             let avg = 0;
             let count = 0;
+            let catw = 0;
 
             for (let i = 0; i < data.length; ++i) {
                 let cat = data[i];
@@ -253,10 +254,17 @@
                 if (cat.weight > 0 && !isNaN(cat.mark)) {
                     avg += cat.mark * cat.weight;
                     count += cat.weight;
+                    catw += cat.weight;
                 }
                 cat.markElement.innerText = `Mark: ${formatGrade(cat.mark)}`;
             }
 
+            if (catw !== 0) {
+                const prop = 100;
+                const weight = 100 - catw;
+                avg += prop * weight;
+                count += weight;
+            }
             gMarkElement.innerText = `Mark: ${formatGrade(avg / count)}`;
         };
 
