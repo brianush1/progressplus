@@ -15,3 +15,5 @@ NOTE: Tampermonkey no longer works on the school laptops, because it's now block
 ## Changelog:
 
 1.7: Fix critical bug with grade prediction if the weighted categories did not add up to a weight of 100.
+
+1.8: Add SGPA.
