@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ProgressPlus
 // @namespace    https://github.com/brianush1/progressplus
-// @version      1.7
+// @version      1.8
 // @updateURL    https://raw.githubusercontent.com/brianush1/progressplus/master/meta.js
 // @downloadURL  https://raw.githubusercontent.com/brianush1/progressplus/master/script.js
 // @description  Add new features to ProgressBook
@@ -327,6 +327,8 @@
         let grid = datagrid.getElementsByTagName("tbody")[0];
         let ggpa = 0;
         let gugpa = 0;
+        let sggpa = 0;
+        let sgugpa = 0;
         let count = 0;
         for (let i = 0; i < grid.children.length; ++i) {
             let v = grid.children[i];
@@ -413,10 +415,19 @@
             let v = grid.children[i];
             let e = document.createElement("td");
             e.align = "center";
+            let e2 = document.createElement("td");
+            e2.align = "center";
             if (i == 0) {
                 e.innerText = "Semester Grade";
+                e2.innerText = "SGPA";
             } else {
                 let name = v.children[0].innerText.toUpperCase().trim();
+                let add = 0;
+                if (name.match(/\bADV\s+PL\b/) || name.match(/\bAP\b/)) {
+                    add = 2;
+                } else if (name.match(/\bHON\b/) || name.match(/\bADV\b/)) {
+                    add = 1;
+                }
                 let q1 = 0;
                 let q2 = 1;
                 let sem = 0;
@@ -434,6 +445,13 @@
                 if (grade1 !== undefined) { grade += grade1; div++; }
                 if (grade2 !== undefined) { grade += grade2; div++; }
                 grade /= div;
+                let gpa = null;
+                let ugpa = null;
+                if (grade >= 89.5) { gpa = 4 + add; ugpa = 4; }
+                else if (grade >= 79.5) { gpa = 3 + add; ugpa = 3; }
+                else if (grade >= 69.5) { gpa = 2 + add; ugpa = 2; }
+                else if (grade >= 59.5) { gpa = 1; ugpa = 1; }
+                else { gpa = 0; ugpa = 0; }
                 if (!(name in semesterHistory[sem])) {
                     semesterHistory[sem][name] = [];
                 }
@@ -461,8 +479,12 @@
                 else changeSpan.style.color = "gray";
                 e.innerText = formatGrade(grade);
                 e.insertBefore(changeSpan, e.lastElementChild);
+                e2.innerText = `${gpa.toFixed(1)} (${ugpa.toFixed(1)})`;
+                sggpa += gpa;
+                sgugpa += ugpa;
             }
-            v.insertBefore(e, v.children[3]);
+            v.insertBefore(e, v.children[4]);
+            v.insertBefore(e2, v.children[5]);
         }
 
         let gpaTr = document.createElement("tr");
@@ -474,12 +496,21 @@
         gpaTr.appendChild(gpaTd);
         tbody.insertBefore(gpaTr, datagrid.parentNode.parentNode);
 
+        gpaTr = document.createElement("tr");
+        gpaTd = document.createElement("td");
+        gpaTd.align = "center";
+        gpaTd.valign = "top";
+        gpaTd.className = "Message";
+        gpaTd.innerText = `SGPA: ${(sggpa / count).toFixed(2)} (${(sgugpa / count).toFixed(2)})`;
+        gpaTr.appendChild(gpaTd);
+        tbody.insertBefore(gpaTr, datagrid.parentNode.parentNode);
+
         let gpaTr2 = document.createElement("tr");
         let gpaTd2 = document.createElement("td");
         gpaTd2.align = "center";
         gpaTd2.valign = "top";
         gpaTd2.className = "AverageMessage";
-        gpaTd2.innerHTML = `<b class="Message">(GPA)</b>: Year to date unweighted.<br><b class="Message">GPA</b>: Year to date weighted.`;
+        gpaTd2.innerHTML = `<b class="Message">(GPA)</b>: Year to date unweighted.<br><b class="Message">GPA</b>: Year to date weighted.<br><b class="Message">(SGPA)</b>: Semester unweighted.<br><b class="Message">SGPA</b>: Semester weighted.`;
         gpaTr2.appendChild(gpaTd2);
         tbody.appendChild(gpaTr2);
     }
